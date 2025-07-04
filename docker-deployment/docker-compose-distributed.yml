@@ -6,7 +6,7 @@ version: "3.8"
 
 services:
   minio:
-    image: minio/minio:RELEASE.2025-06-13T11-33-47Z
+    image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/minio/minio:RELEASE.2025-01-18T00-31-37Z
     hostname: minio-node1 # 每个节点需要修改这个hostname
     volumes:
       - /data1:/data1

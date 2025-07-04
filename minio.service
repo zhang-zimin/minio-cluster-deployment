@@ -1,0 +1,9 @@
+MINIO_VOLUMES="http://172.17.169.150:9000/mnt/data http://172.17.169.101:9000/mnt/data"
+
+MINIO_STORAGE_CLASS_STANDARD="EC:1"
+
+MINIO_OPTS="--console-address :9001"
+
+MINIO_ROOT_USER=minioadmin
+
+MINIO_ROOT_PASSWORD=minioadmin

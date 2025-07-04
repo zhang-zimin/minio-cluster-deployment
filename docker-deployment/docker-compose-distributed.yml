@@ -1,0 +1,32 @@
+# 多节点分布式部署配置
+# 此配置需要在每个节点上部署一个MinIO实例
+# 假设你有4台机器：192.168.1.10, 192.168.1.11, 192.168.1.12, 192.168.1.13
+
+version: "3.8"
+
+services:
+  minio:
+    image: minio/minio:RELEASE.2025-06-13T11-33-47Z
+    hostname: minio-node1 # 每个节点需要修改这个hostname
+    volumes:
+      - /data1:/data1
+      - /data2:/data2
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server --console-address ":9001" http://192.168.1.{10...13}:9000/data{1...2}
+    networks:
+      - minio-network
+
+networks:
+  minio-network:
+    driver: bridge
+
+volumes:
+  data1:
+    driver: local
+  data2:
+    driver: local

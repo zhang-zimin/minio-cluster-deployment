@@ -1,23 +1,48 @@
+# ========================================
+# MinIO 分布式存储服务 SystemD 配置文件
+# 版本: 1.0
+# 作者: Bentley Systems, Incorporated.
+# 创建时间: 2025-07-07
+# ========================================
+
 [Unit]
+# 服务描述信息
 Description=MinIO
+# 官方文档链接
 Documentation=https://min.io/docs/minio/linux/index.html
+# 依赖网络在线目标（软依赖，不会阻塞启动）
 Wants=network-online.target
+# 在网络在线后启动（强制顺序）
 After=network-online.target
+# 断言：确保 MinIO 可执行文件存在且可执行
 AssertFileIsExecutable=/usr/local/bin/minio
 
 [Service]
+# 工作目录设置
 WorkingDirectory=/usr/local
+# 运行用户（非root用户，提高安全性）
 User=minio-user
+# 运行用户组
 Group=minio-user
+# 隐藏进程信息，提高安全性
 ProtectProc=invisible
+# 环境变量配置文件路径
 EnvironmentFile=/etc/default/minio
+# 启动前检查：验证 MINIO_VOLUMES 环境变量是否设置
 ExecStartPre=/bin/bash -c "if [ -z \"${MINIO_VOLUMES}\" ]; then echo \"Variable MINIO_VOLUMES not set in /etc/default/minio\"; exit 1; fi"
+# 启动命令：使用环境变量中的配置启动 MinIO 服务
 ExecStart=/usr/local/bin/minio server $MINIO_OPTS $MINIO_VOLUMES
+# 自动重启策略：总是重启（无论什么原因退出）
 Restart=always
+# 文件描述符限制（MinIO 需要较高的文件句柄数）
 LimitNOFILE=65536
+# 任务数限制：无限制
 TasksMax=infinity
+# 停止超时时间：无限制（允许优雅关闭）
 TimeoutStopSec=infinity
+# 不发送 SIGKILL 信号强制杀死进程
 SendSIGKILL=no
 
 [Install]
+# 安装目标：多用户模式下自动启动
 WantedBy=multi-user.target

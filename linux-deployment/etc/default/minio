@@ -1,7 +1,26 @@
+# ========================================
+# MinIO 分布式存储服务环境变量配置文件
+# 版本: 1.0
+# 作者: Bentley Systems, Incorporated.
+# 创建时间: 2025-07-07
+# ========================================
+
+# MinIO 存储卷配置
+# 格式: http://IP:PORT/数据目录路径
+# 分布式部署时，需要指定所有节点的地址和数据目录
+# 注意：所有节点必须使用相同的卷列表配置
 MINIO_VOLUMES="http://172.17.169.150:9000/mnt/data/minio http://172.17.169.101:9000/mnt/data/minio"
 
+# MinIO 启动选项
+# --console-address: 指定 Web 控制台监听地址和端口
+# 默认控制台端口为随机端口，这里固定为 9001
 MINIO_OPTS="--console-address :9001"
 
+# MinIO 管理员用户名
+# 用于访问 Web 控制台和 API 的根用户
 MINIO_ROOT_USER=minioadmin
 
+# MinIO 管理员密码
+# 生产环境中请使用强密码
+# 建议至少8位字符，包含大小写字母、数字和特殊字符
 MINIO_ROOT_PASSWORD=minioadmin

@@ -52,9 +52,7 @@ windows-deployment/
 
 #### 步骤1：安装 MinIO 服务
 
-使用 NSSM 安装四个 MinIO 节点服务：
-
-你也可以使用 NSSM 的图形界面进行配置：
+你可以使用 NSSM 的图形界面进行配置：
 
 ```batch
 # 打开 NSSM 图形界面

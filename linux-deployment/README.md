@@ -174,7 +174,6 @@ sudo firewall-cmd --list-all  # CentOS/RHEL
 sudo firewall-cmd --permanent --add-port=9000/tcp
 sudo firewall-cmd --permanent --add-port=9001/tcp
 sudo firewall-cmd --reload
-```
 
 ### 6. 启动 MinIO 服务
 

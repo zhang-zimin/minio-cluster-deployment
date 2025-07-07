@@ -1,0 +1,217 @@
+# MinIO 跨网段部署示例配置
+# 适用于节点分布在不同网段的场景
+#
+# 示例网络拓扑：
+# - 节点1: 192.168.1.10  (办公网络)
+# - 节点2: 10.0.0.20     (数据中心A)
+# - 节点3: 172.16.0.30   (数据中心B)
+# - 节点4: 203.0.113.40  (云服务器)
+
+version: "3.8"
+
+services:
+  minio:
+    image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/minio/minio:RELEASE.2025-01-20T14-49-07Z
+    hostname: minio-node2 # 每个节点修改为对应名称
+
+    volumes:
+      - /data1:/data1
+      - /data2:/data2
+      - /var/log/minio:/var/log/minio
+      - /var/log/minio/audit:/var/log/minio/audit
+      - /var/log/minio/app:/var/log/minio/app
+
+    # 使用host网络模式，直接使用主机网络
+    # 适用于跨网段部署，避免Docker网络转发的复杂性
+    network_mode: host
+
+    # host模式下不需要端口映射，容器直接使用主机端口
+    # ports:
+    #   - "9000:9000"
+    #   - "9001:9001"
+
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+      # 如果使用HTTPS，添加以下环境变量
+      # MINIO_SERVER_URL: https://your-domain.com:9000
+      # MINIO_BROWSER_REDIRECT_URL: https://your-domain.com:9001
+
+      # 日志级别配置
+      # 可选值: OFF, FATAL, ERROR, WARN, INFO, DEBUG, TRACE
+      MINIO_LOG_LEVEL: INFO
+
+      # 日志输出格式
+      # 可选值: json, text
+      MINIO_LOG_FORMAT: json
+
+      # 日志文件路径
+      MINIO_LOG_FILE: /var/log/minio/app/minio.log
+
+      # 审计日志配置
+      MINIO_AUDIT_WEBHOOK_ENABLE: "on"
+      MINIO_AUDIT_WEBHOOK_ENDPOINT: "http://localhost:8080/audit"
+      MINIO_AUDIT_WEBHOOK_AUTH_TOKEN: "your-audit-token"
+
+      # 启用审计日志到文件
+      MINIO_AUDIT_LOGGER_HTTP_ENABLE: "on"
+      MINIO_AUDIT_LOGGER_HTTP_ENDPOINT: "file:///var/log/minio/audit/audit.log"
+
+      # 控制台日志配置
+      MINIO_CONSOLE_LOG_LEVEL: INFO
+      MINIO_CONSOLE_LOG_FORMAT: json
+
+    # 跨网段部署必须完整列出所有节点地址
+    # 不能使用 {10...13} 的简化语法
+    command: >
+      server --console-address ":9001"
+      http://172.24.168.85:9000/data1
+      http://172.24.168.85:9000/data2
+      http://172.24.170.19:9000/data1
+      http://172.24.170.19:9000/data2
+
+    # 日志轮转配置
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m" # 单个日志文件最大大小
+        max-file: "10" # 保留的日志文件数量
+        compress: "true" # 压缩历史日志文件
+
+    # 健康检查配置
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  data1:
+    driver: local
+  data2:
+    driver: local
+# =============================================================================
+# 日志管理说明
+# =============================================================================
+#
+# 1. 日志目录结构：
+#    /var/log/minio/
+#    ├── app/                   # 应用日志
+#    │   ├── minio.log         # 主日志文件
+#    │   └── minio.log.1       # 轮转后的日志文件
+#    ├── audit/                # 审计日志
+#    │   ├── audit.log         # 审计日志文件
+#    │   └── audit.log.1       # 轮转后的审计日志
+#    └── docker/               # Docker容器日志
+#        └── container.log     # 容器标准输出日志
+#
+# 2. 日志级别说明：
+#    - OFF: 关闭日志
+#    - FATAL: 致命错误
+#    - ERROR: 错误信息
+#    - WARN: 警告信息
+#    - INFO: 一般信息 (推荐)
+#    - DEBUG: 调试信息
+#    - TRACE: 跟踪信息 (最详细)
+#
+# 3. 日志轮转配置：
+#    - max-size: 单个日志文件最大大小
+#    - max-file: 保留的日志文件数量
+#    - compress: 是否压缩历史日志文件
+#
+# 4. 审计日志功能：
+#    - 记录所有API调用
+#    - 包含用户身份、操作时间、请求详情
+#    - 支持输出到文件或HTTP端点
+#
+# 5. 日志文件位置：
+#    - 应用日志: /var/log/minio/app/minio.log
+#    - 审计日志: /var/log/minio/audit/audit.log
+#    - Docker日志: docker logs <container_name>
+#
+# 6. 日志查看命令：
+#    # 查看实时日志
+#    docker-compose logs -f minio
+#
+#    # 查看特定时间日志
+#    docker-compose logs --since 2024-01-01T00:00:00Z minio
+#
+#    # 查看应用日志文件
+#    tail -f /var/log/minio/app/minio.log
+#
+#    # 查看审计日志
+#    tail -f /var/log/minio/audit/audit.log
+#
+#    # 搜索错误日志
+#    grep -i error /var/log/minio/app/minio.log
+#
+#    # 分析日志统计
+#    cat /var/log/minio/app/minio.log | jq '.level' | sort | uniq -c
+#
+# 7. 日志监控与告警：
+#    # 使用logrotate管理日志轮转
+#    /etc/logrotate.d/minio:
+#    /var/log/minio/app/*.log {
+#        daily
+#        rotate 30
+#        compress
+#        delaycompress
+#        missingok
+#        notifempty
+#        create 0644 root root
+#        postrotate
+#            docker-compose -f /path/to/docker-compose.yml restart minio
+#        endscript
+#    }
+#
+#    # 使用ELK Stack收集日志
+#    # 配置Filebeat收集日志到Elasticsearch
+#
+#    # 使用Prometheus + Grafana监控
+#    # MinIO提供/minio/v2/metrics/cluster端点
+#
+# 8. 常见日志问题排查：
+#    - 启动失败: 检查ERROR级别日志
+#    - 性能问题: 检查WARN级别日志
+#    - 网络问题: 检查网络相关ERROR日志
+#    - 存储问题: 检查磁盘相关ERROR日志
+#
+# 9. 日志安全建议：
+#    - 设置合适的日志级别 (生产环境建议INFO)
+#    - 定期清理历史日志文件
+#    - 保护审计日志文件权限
+#    - 考虑日志加密传输
+#
+# =============================================================================
+# 部署前检查清单：
+# =============================================================================
+# 1. 网络连通性测试：
+#    telnet 192.168.1.10 9000
+#    telnet 10.0.0.20 9000
+#    telnet 172.16.0.30 9000
+#    telnet 203.0.113.40 9000
+#
+# 2. 防火墙配置：
+#    sudo ufw allow 9000/tcp
+#    sudo ufw allow 9001/tcp
+#
+# 3. 时间同步：
+#    sudo ntpdate -s time.nist.gov
+#
+# 4. 数据目录权限：
+#    sudo mkdir -p /data1 /data2
+#    sudo chown -R 1000:1000 /data1 /data2
+#
+# 5. 日志目录权限：
+#    sudo mkdir -p /var/log/minio/app /var/log/minio/audit
+#    sudo chown -R 1000:1000 /var/log/minio
+#    sudo chmod 755 /var/log/minio
+#
+# 6. 日志轮转配置：
+#    sudo cp /etc/logrotate.d/minio.example /etc/logrotate.d/minio
+#    sudo logrotate -d /etc/logrotate.d/minio  # 测试配置
+#
+# 7. 磁盘空间检查：
+#    df -h /var/log/minio  # 确保日志目录有足够空间
+#    du -sh /var/log/minio/*  # 检查当前日志大小

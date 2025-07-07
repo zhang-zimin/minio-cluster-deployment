@@ -2,7 +2,7 @@
 
 ### 部署方式选择
 
-#### 1. 单机多容器部署（当前的 docker-compose.yml）
+####  单机多容器部署（当前的 docker-compose.yml）
 **适用场景：** 开发测试、资源有限的环境
 - 在单台机器上运行4个MinIO容器
 - 容器间通过Docker网络通信
@@ -12,20 +12,6 @@
 ```bash
 cd c:\dev\minio-cluster\docker-deployment
 docker-compose up -d
-```
-
-#### 2. 多机分布式部署（docker-compose-distributed.yml）
-**适用场景：** 生产环境、真正的高可用集群
-- 每台物理机运行一个MinIO实例
-- 需要4台独立的服务器
-- 通过IP地址互相通信
-
-**部署步骤：**
-1. 在每台机器上修改hostname和IP地址
-2. 确保网络互通（防火墙开放9000端口）
-3. 在每台机器上运行：
-```bash
-docker-compose -f docker-compose-distributed.yml up -d
 ```
 
 ### 使用 Docker Compose

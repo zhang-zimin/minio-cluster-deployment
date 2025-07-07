@@ -1,14 +1,16 @@
 @echo off
+setlocal EnableDelayedExpansion
+REM ========================================
+REM MinIO Distributed Cluster Startup Script
+REM Version: 1.0
+REM Author: Bentley Systems, Incorporated.
+REM Created: 2025-07-07
+REM ========================================
 
-echo ========================================
-echo MinIO 分布式集群服务安装程序
-echo ========================================
-echo.
+REM Set MinIO executable file path
+set "MINIO_PATH=minio.exe"  
 
-REM 设置MinIO可执行文件的路径
-set "MINIO_PATH=C:\dev\minio\minio.exe"  
-
-REM 检查可执行文件的路径是否存在
+REM Check if executable file path exists
 if not exist "%MINIO_PATH%" (
     echo Error: MinIO executable not found at %MINIO_PATH%
     pause
@@ -20,7 +22,7 @@ set "BASE_PATH=C:/dev/minio-cluster/windows-deployment"
 set MINIO_ROOT_USER=minioadmin
 set MINIO_ROOT_PASSWORD=minioadmin
 
-REM 创建数据目录
+REM Create data directories
 if not exist "%BASE_PATH%\miniodata1" mkdir "%BASE_PATH%\miniodata1"
 if not exist "%BASE_PATH%\miniodata2" mkdir "%BASE_PATH%\miniodata2"
 if not exist "%BASE_PATH%\miniodata3" mkdir "%BASE_PATH%\miniodata3"

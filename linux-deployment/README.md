@@ -49,8 +49,8 @@ linux-deployment/
 # 下载 MinIO 二进制文件
 sudo wget https://dl.min.io/server/minio/release/linux-amd64/archive/minio.RELEASE.2025-01-18T00-31-37Z
 
-#重命名
-sudo mv minio.RELEASE.2025-01-18T00-31-37Z minio  # 重命名为minio
+# 重命名为minio
+sudo mv minio.RELEASE.2025-01-18T00-31-37Z minio  
 
 # 赋予执行权限
 sudo chmod +x minio
@@ -239,6 +239,94 @@ curl -I http://localhost:9000/minio/health/live
 - 可以通过任意节点的地址访问集群
 - 集群会自动在节点间同步数据
 - 建议在生产环境中使用负载均衡器
+
+## 📊 日志管理和监控
+
+### 日志存储位置
+
+MinIO 在 Linux 环境下的日志存储位置：
+
+#### 1. SystemD 日志（默认）
+- **位置**: SystemD 日志系统（journald）
+- **持久化路径**: `/var/log/journal/`（如果启用持久化）
+- **临时路径**: `/run/log/journal/`（默认，重启后清空）
+
+#### 2. 自定义日志文件（可选）
+如果在 `/etc/default/minio` 中配置了 `MINIO_LOG_FILE`，日志将输出到指定文件。
+
+### 日志查看和管理
+
+```bash
+# 查看所有 MinIO 日志
+sudo journalctl -u minio
+
+# 查看最近的日志
+sudo journalctl -u minio --since "1 hour ago"
+
+# 实时跟踪日志
+sudo journalctl -u minio -f
+
+# 查看特定时间范围的日志
+sudo journalctl -u minio --since "2025-07-07 00:00:00" --until "2025-07-07 23:59:59"
+
+# 查看最新的 100 行日志
+sudo journalctl -u minio -n 100
+
+# 导出日志到文件
+sudo journalctl -u minio > minio.log
+
+# 查看日志级别为错误的条目
+sudo journalctl -u minio -p err
+
+# 清理旧日志（保留最近 30 天）
+sudo journalctl --vacuum-time=30d
+```
+
+### 日志配置选项
+
+在 `/etc/default/minio` 中可以添加以下日志配置：
+
+```bash
+# 日志文件路径（可选）
+MINIO_LOG_FILE="/var/log/minio/minio.log"
+
+# 日志级别（可选）
+MINIO_LOG_LEVEL="info"  # 可选值: debug, info, warn, error
+```
+
+如果使用自定义日志文件，需要创建相应目录：
+
+```bash
+# 创建日志目录
+sudo mkdir -p /var/log/minio
+
+# 设置权限
+sudo chown minio-user:minio-user /var/log/minio
+sudo chmod 755 /var/log/minio
+```
+
+### 日志轮转配置
+
+为防止日志文件过大，建议配置日志轮转：
+
+```bash
+# 创建日志轮转配置文件
+sudo nano /etc/logrotate.d/minio
+
+# 配置内容示例：
+/var/log/minio/*.log {
+    weekly
+    rotate 52
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 644 minio-user minio-user
+    postrotate
+        systemctl reload minio
+    endscript
+}
+```
 
 ## 🔧 集群管理
 

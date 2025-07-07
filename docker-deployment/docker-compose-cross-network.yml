@@ -11,7 +11,7 @@ version: "3.8"
 
 services:
   minio:
-    image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/minio/minio:RELEASE.2025-06-13T11-33-47Z
+    image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/minio/minio:RELEASE.2025-01-20T14-49-07Z
     hostname: minio-node2 # 每个节点修改为对应名称
 
     volumes:

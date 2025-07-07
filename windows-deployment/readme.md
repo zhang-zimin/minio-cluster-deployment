@@ -166,6 +166,9 @@ Stop-Service MinIO-Node2
 Stop-Service MinIO-Node1
 ```
 
+#强制停止服务
+Stop-Process -Id <PID> -Force
+
 #### 重启服务
 
 ```batch

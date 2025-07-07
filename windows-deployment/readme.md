@@ -162,10 +162,10 @@ Stop-Service MinIO-Node4
 Stop-Service MinIO-Node3
 Stop-Service MinIO-Node2
 Stop-Service MinIO-Node1
-```
 
-#强制停止服务
+# 强制停止服务
 Stop-Process -Id <PID> -Force
+```
 
 #### 重启服务
 

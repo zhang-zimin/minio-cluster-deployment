@@ -46,7 +46,6 @@ start-minio1.bat
 │   ├── README.md               # 详细部署指南
 │   └── etc/                    # 配置文件模板
 ├── windows-deployment/         # Windows批处理脚本
-├── WARP/                      # 性能测试工具
 └── mc.md                      # MinIO客户端命令参考
 ```
 

@@ -48,43 +48,57 @@ services:
       # 日志文件路径
       MINIO_LOG_FILE: /var/log/minio/app/minio.log
 
-      # 审计日志配置
-      MINIO_AUDIT_WEBHOOK_ENABLE: "on"
-      MINIO_AUDIT_WEBHOOK_ENDPOINT: "http://localhost:8080/audit"
-      MINIO_AUDIT_WEBHOOK_AUTH_TOKEN: "your-audit-token"
-
+      # 审计日志配置 - 只启用文件审计，禁用Webhook
+      MINIO_AUDIT_WEBHOOK_ENABLE: "off"
       # 启用审计日志到文件
       MINIO_AUDIT_LOGGER_HTTP_ENABLE: "on"
       MINIO_AUDIT_LOGGER_HTTP_ENDPOINT: "file:///var/log/minio/audit/audit.log"
 
-      # 控制台日志配置
-      MINIO_CONSOLE_LOG_LEVEL: INFO
-      MINIO_CONSOLE_LOG_FORMAT: json
-
     # 跨网段部署必须完整列出所有节点地址
     # 不能使用 {10...13} 的简化语法
+    # 先检查和创建日志目录，确保权限正确，然后启动 MinIO
     command: >
-      server --console-address ":9001"
+      sh -c "
+      echo '========== MinIO 初始化检查 ==========' &&
+      echo 'Container user: $(whoami) (UID: $(id -u), GID: $(id -g))' &&
+      echo 'Current time: $(date)' &&
+      echo '' &&
+
+      echo '创建日志目录...' &&
+      mkdir -p /var/log/minio/app /var/log/minio/audit &&
+      chmod 755 /var/log/minio /var/log/minio/app /var/log/minio/audit &&
+
+      echo '创建日志文件...' &&
+      touch /var/log/minio/app/minio.log &&
+      touch /var/log/minio/audit/audit.log &&
+      chmod 644 /var/log/minio/app/minio.log &&
+      chmod 644 /var/log/minio/audit/audit.log &&
+
+      echo '验证日志目录权限...' &&
+      ls -la /var/log/minio/ &&
+      ls -la /var/log/minio/app/ &&
+      ls -la /var/log/minio/audit/ &&
+
+      echo '测试日志文件写入...' &&
+      echo '$(date): MinIO container initialized with PID $$' >> /var/log/minio/app/minio.log &&
+      echo '$(date): Audit logging system initialized' >> /var/log/minio/audit/audit.log &&
+
+      echo '权限检查完成，启动 MinIO 服务器...' &&
+      echo '====================================' &&
+      exec minio server --console-address ':9001'
       http://172.24.168.85:9000/data1
       http://172.24.168.85:9000/data2
       http://172.24.170.19:9000/data1
       http://172.24.170.19:9000/data2
+      "
 
-    # 日志轮转配置
+    # 容器日志配置（保留Docker日志以便调试）
     logging:
       driver: "json-file"
       options:
         max-size: "100m" # 单个日志文件最大大小
-        max-file: "10" # 保留的日志文件数量
+        max-file: "5" # 保留的日志文件数量
         compress: "true" # 压缩历史日志文件
-
-    # 健康检查配置
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
 
 volumes:
   data1:

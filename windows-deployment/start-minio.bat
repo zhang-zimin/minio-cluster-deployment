@@ -8,7 +8,7 @@ REM Created: 2025-07-07
 REM ========================================
 
 REM Set MinIO executable file path
-set "MINIO_PATH=minio.exe"  
+set "MINIO_PATH=C:\dev\minio\minio.exe"  
 
 REM Check if executable file path exists
 if not exist "%MINIO_PATH%" (

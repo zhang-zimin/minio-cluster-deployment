@@ -15,8 +15,8 @@
 
 ```
 windows-deployment/
-├── start-minio.bat          # MinIO 节点启动脚本
-├── nssm.exe                  # NSSM 服务管理工具
+├── start-minio.bat              # 原始MinIO启动脚本（分布式部署）
+├── nssm.exe                     # NSSM服务管理工具
 ```
 
 ## 部署方式选择
@@ -293,6 +293,22 @@ taskkill /PID <进程ID> /F
 2. 确认 minio.exe 文件存在
 3. 查看错误日志文件
 4. 检查数据目录权限
+5. **检查 NSSM 配置**：
+   - 确认 Path 设置为 `C:\Windows\System32\cmd.exe`
+   - 确认 Arguments 包含 `/c` 参数
+   - 确认 Startup directory 设置正确
+   - 使用 `nssm edit MinIO-Node1` 检查配置
+
+#### 2.1 NSSM 配置验证
+```batch
+# 检查 NSSM 服务配置
+nssm get MinIO-Node1 Application
+nssm get MinIO-Node1 AppParameters
+nssm get MinIO-Node1 AppDirectory
+
+# 编辑现有服务配置
+nssm edit MinIO-Node1
+```
 
 #### 3. 集群节点无法通信
 **现象**：节点启动成功但集群状态异常  
@@ -333,6 +349,105 @@ taskkill /PID <进程ID> /F
 3. **系统资源**
    - 分配足够的内存（每个节点至少 1GB）
    - 确保 CPU 资源充足
+
+---
+
+## NSSM 详细配置说明
+
+**方法一：使用批处理文件路径（推荐）**
+
+上面的命令行方式直接指定批处理文件路径，这是最简单的方式。
+
+**方法二：使用 NSSM GUI 配置**
+
+你也可以使用 NSSM 的图形界面进行配置：
+
+```batch
+# 打开 NSSM 图形界面
+nssm install MinIO-Node1
+```
+
+在 NSSM 图形界面中的 **Application** 选项卡配置：
+
+- **Path**: `C:\Windows\System32\cmd.exe`
+- **Startup directory**: `C:\dev\minio-cluster\windows-deployment`
+- **Arguments**: `/c "C:\dev\minio-cluster\windows-deployment\start-minio1.bat"`
+
+**为什么使用 `/c` 参数？**
+
+`/c` 是 Windows 命令提示符 (`cmd.exe`) 的一个参数，含义如下：
+
+- `/c` 表示 "Carries out the command specified by string and then terminates"
+- 即：执行指定的命令，然后退出命令提示符
+- 如果不使用 `/c`，cmd.exe 会保持打开状态等待用户输入
+
+**参数对比说明：**
+
+```batch
+# 错误的配置（缺少 /c）
+Arguments: "C:\dev\minio-cluster\windows-deployment\start-minio1.bat"
+# 问题：cmd.exe 会尝试把批处理文件路径当作普通文本处理，无法正确执行
+
+# 正确的配置（使用 /c）
+Arguments: /c "C:\dev\minio-cluster\windows-deployment\start-minio1.bat"
+# 效果：cmd.exe 会执行批处理文件，然后保持运行状态（因为批处理文件中的 minio.exe 会持续运行）
+```
+
+**其他常用的 cmd.exe 参数：**
+
+- `/k` - 执行命令后保持命令提示符打开（用于调试）
+- `/s` - 修改引号的处理方式
+- `/q` - 关闭回显
+
+**完整的配置示例：**
+
+```batch
+# 节点1 - 使用 GUI 配置方式
+nssm install MinIO-Node1
+
+# 在 Application 选项卡中：
+# Path: C:\Windows\System32\cmd.exe
+# Startup directory: C:\dev\minio-cluster\windows-deployment
+# Arguments: /c "C:\dev\minio-cluster\windows-deployment\start-minio1.bat"
+
+# 在 Details 选项卡中：
+nssm set MinIO-Node1 DisplayName "MinIO Cluster Node 1"
+nssm set MinIO-Node1 Description "MinIO分布式存储集群节点1"
+
+# 在 Log on 选项卡中：
+nssm set MinIO-Node1 Start SERVICE_AUTO_START
+
+# 在 I/O 选项卡中：
+nssm set MinIO-Node1 AppStdout "C:\dev\minio-cluster\windows-deployment\logs\minio-node1.log"
+nssm set MinIO-Node1 AppStderr "C:\dev\minio-cluster\windows-deployment\logs\minio-node1-error.log"
+
+# 节点2-4 也可以使用相同的 GUI 配置方式
+# 只需要修改对应的批处理文件路径和日志文件路径即可
+
+# 节点2
+nssm install MinIO-Node2 "C:\dev\minio-cluster\windows-deployment\start-minio2.bat"
+nssm set MinIO-Node2 DisplayName "MinIO Cluster Node 2"
+nssm set MinIO-Node2 Description "MinIO分布式存储集群节点2"
+nssm set MinIO-Node2 Start SERVICE_AUTO_START
+nssm set MinIO-Node2 AppStdout "C:\dev\minio-cluster\windows-deployment\logs\minio-node2.log"
+nssm set MinIO-Node2 AppStderr "C:\dev\minio-cluster\windows-deployment\logs\minio-node2-error.log"
+
+# 节点3
+nssm install MinIO-Node3 "C:\dev\minio-cluster\windows-deployment\start-minio3.bat"
+nssm set MinIO-Node3 DisplayName "MinIO Cluster Node 3"
+nssm set MinIO-Node3 Description "MinIO分布式存储集群节点3"
+nssm set MinIO-Node3 Start SERVICE_AUTO_START
+nssm set MinIO-Node3 AppStdout "C:\dev\minio-cluster\windows-deployment\logs\minio-node3.log"
+nssm set MinIO-Node3 AppStderr "C:\dev\minio-cluster\windows-deployment\logs\minio-node3-error.log"
+
+# 节点4
+nssm install MinIO-Node4 "C:\dev\minio-cluster\windows-deployment\start-minio4.bat"
+nssm set MinIO-Node4 DisplayName "MinIO Cluster Node 4"
+nssm set MinIO-Node4 Description "MinIO分布式存储集群节点4"
+nssm set MinIO-Node4 Start SERVICE_AUTO_START
+nssm set MinIO-Node4 AppStdout "C:\dev\minio-cluster\windows-deployment\logs\minio-node4.log"
+nssm set MinIO-Node4 AppStderr "C:\dev\minio-cluster\windows-deployment\logs\minio-node4-error.log"
+```
 
 
 

@@ -11,18 +11,21 @@ version: "3.8"
 
 services:
   minio:
-    image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/minio/minio:RELEASE.2025-01-18T00-31-37Z
-    hostname: minio-node1 # 每个节点修改为对应名称
+    image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/minio/minio:RELEASE.2025-06-13T11-33-47Z
+    hostname: minio-node2 # 每个节点修改为对应名称
 
     volumes:
       - /data1:/data1
       - /data2:/data2
 
-    # 如果使用公网IP，建议使用host网络模式
-    # network_mode: host
-    ports:
-      - "9000:9000"
-      - "9001:9001"
+    # 使用host网络模式，直接使用主机网络
+    # 适用于跨网段部署，避免Docker网络转发的复杂性
+    network_mode: host
+
+    # host模式下不需要端口映射，容器直接使用主机端口
+    # ports:
+    #   - "9000:9000"
+    #   - "9001:9001"
 
     environment:
       MINIO_ROOT_USER: minioadmin
@@ -35,22 +38,10 @@ services:
     # 不能使用 {10...13} 的简化语法
     command: >
       server --console-address ":9001"
-      http://192.168.1.10:9000/data1
-      http://192.168.1.10:9000/data2
-      http://10.0.0.20:9000/data1
-      http://10.0.0.20:9000/data2
-      http://172.16.0.30:9000/data1
-      http://172.16.0.30:9000/data2
-      http://203.0.113.40:9000/data1
-      http://203.0.113.40:9000/data2
-
-    # 使用host网络时注释掉以下网络配置
-    networks:
-      - minio-network
-
-networks:
-  minio-network:
-    driver: bridge
+      http://172.24.168.85:9000/data1
+      http://172.24.168.85:9000/data2
+      http://172.24.170.19:9000/data1
+      http://172.24.170.19:9000/data2
 
 volumes:
   data1:

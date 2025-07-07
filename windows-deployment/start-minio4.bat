@@ -7,4 +7,3 @@ minio.exe server ^
  http://127.0.0.1:9002/miniodata3 ^
  http://127.0.0.1:9003/miniodata4 ^
  --console-address :9013 --address :9003
-pause

@@ -115,7 +115,7 @@ nssm set MinIO-Node1 AppStderr "C:\dev\minio-cluster\windows-deployment\logs\min
 
 # 节点2-4 也可以使用相同的 GUI 配置方式
 # 只需要修改对应的批处理文件路径和日志文件路径即可
-
+```
 
 #### 步骤2：启动服务
 

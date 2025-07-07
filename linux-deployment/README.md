@@ -245,13 +245,10 @@ curl -I http://localhost:9000/minio/health/live
 
 MinIO 在 Linux 环境下的日志存储位置：
 
-#### 1. SystemD 日志（默认）
+#### . SystemD 日志（默认）
 - **位置**: SystemD 日志系统（journald）
 - **持久化路径**: `/var/log/journal/`（如果启用持久化）
 - **临时路径**: `/run/log/journal/`（默认，重启后清空）
-
-#### 2. 自定义日志文件（可选）
-如果在 `/etc/default/minio` 中配置了 `MINIO_LOG_FILE`，日志将输出到指定文件。
 
 ### 日志查看和管理
 
@@ -279,52 +276,6 @@ sudo journalctl -u minio -p err
 
 # 清理旧日志（保留最近 30 天）
 sudo journalctl --vacuum-time=30d
-```
-
-### 日志配置选项
-
-在 `/etc/default/minio` 中可以添加以下日志配置：
-
-```bash
-# 日志文件路径（可选）
-MINIO_LOG_FILE="/var/log/minio/minio.log"
-
-# 日志级别（可选）
-MINIO_LOG_LEVEL="info"  # 可选值: debug, info, warn, error
-```
-
-如果使用自定义日志文件，需要创建相应目录：
-
-```bash
-# 创建日志目录
-sudo mkdir -p /var/log/minio
-
-# 设置权限
-sudo chown minio-user:minio-user /var/log/minio
-sudo chmod 755 /var/log/minio
-```
-
-### 日志轮转配置
-
-为防止日志文件过大，建议配置日志轮转：
-
-```bash
-# 创建日志轮转配置文件
-sudo nano /etc/logrotate.d/minio
-
-# 配置内容示例：
-/var/log/minio/*.log {
-    weekly
-    rotate 52
-    compress
-    delaycompress
-    missingok
-    notifempty
-    create 644 minio-user minio-user
-    postrotate
-        systemctl reload minio
-    endscript
-}
 ```
 
 ## 🔧 集群管理
